@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use crate::puzzle;
-
 // Represents all the possible values that can be held in a Sudoku cell
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum Cell {
@@ -54,7 +52,6 @@ impl From<u8> for Cell {
 // Convert a cell to a byte
 impl From<Cell> for u8 {
     fn from(value: Cell) -> Self {
-
         use Cell::*;
         match value {
             Unset => 0,
@@ -80,6 +77,23 @@ pub struct Puzzle {
 impl Puzzle {
     pub fn new(cells: [Cell; 81]) -> Self {
         Self { cells }
+    }
+
+    pub fn set_cell(&self, index: usize, cell: Cell) -> Self {
+        debug_assert!(index < 81);
+
+        let mut cells = self.cells.clone();
+        cells[index] = cell;
+        Puzzle::new(cells)
+    }
+
+    // pub fn get_cell(&self, index: usize) -> Cell {
+    //     self.cells[index]
+    // }
+
+    // Return an iterator over all the set cells in the sudoku grid and their indexes.
+    pub fn iter_unset_cells(&self) -> impl Iterator<Item = (usize, &Cell)> {
+        self.cells.iter().enumerate().filter(|(_i, c)| !c.is_set())
     }
 
     /// Get a column of the sudoku board
@@ -119,9 +133,9 @@ impl Puzzle {
             0..=2 => index * 3,
             3..=5 => 27 + ((index % 3) * 3),
             6..=8 => 54 + ((index % 3) * 3),
-            
+
             // This is unreachable thanks to the assert at the start of the function
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         let row1 = &self.cells[start_index..start_index + 3];
@@ -150,7 +164,23 @@ impl Puzzle {
 
         let row_index = cell_index / 9;
         let column_index = cell_index % 9;
-        let block_index = (cell_index / 3) % 9;
+        // Given a row and column index, figure out what 3x3 block the cell belongs to
+        let block_index = match (row_index, column_index) {
+            // First row of blocks
+            (0..=2, 0..=2) => 0,
+            (0..=2, 3..=5) => 1,
+            (0..=2, 6..=8) => 2,
+            // Second row of blocks
+            (3..=5, 0..=2) => 3,
+            (3..=5, 3..=5) => 4,
+            (3..=5, 6..=8) => 5,
+            // Third row of blocks
+            (6..=8, 0..=2) => 6,
+            (6..=8, 3..=5) => 7,
+            (6..=8, 6..=8) => 8,
+
+            _ => unreachable!(),
+        };
 
         let mut set = HashSet::new();
         set.insert(Cell::One);
@@ -173,6 +203,20 @@ impl Puzzle {
         }
 
         set
+    }
+
+    pub fn is_solved(&self) -> bool {
+        if !self.is_valid() {
+            return false;
+        }
+
+        for cell in self.cells {
+            if !cell.is_set() {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
@@ -299,48 +343,33 @@ fn test_puzzle_is_valid() {
     use Cell::*;
     assert_eq!(
         puzzle.row(0),
-        [
-            Five,
-            Three,
-            Unset,
-            Unset,
-            Seven,
-            Unset,
-            Unset,
-            Unset,
-            Unset
-        ]
+        [Five, Three, Unset, Unset, Seven, Unset, Unset, Unset, Unset]
     );
 
     assert_eq!(
         puzzle.block(4),
-        [
-            Unset,
-            Six,
-            Unset,
-            Eight,
-            Unset,
-            Three,
-            Unset,
-            Two,
-            Unset,
-        ]
+        [Unset, Six, Unset, Eight, Unset, Three, Unset, Two, Unset,]
     );
 
     assert_eq!(
         puzzle.column(8),
-        [
-            Unset,
-            Unset,
-            Unset,
-            Three,
-            One,
-            Six,
-            Unset,
-            Five,
-            Nine,
-        ]
+        [Unset, Unset, Unset, Three, One, Six, Unset, Five, Nine,]
     );
+
+    assert_eq!(
+        puzzle.row(5),
+        [Seven, Unset, Unset, Unset, Two, Unset, Unset, Unset, Six]
+    );
+
+    assert_eq!(
+        puzzle.column(5),
+        [Unset, Five, Unset, Unset, Three, Unset, Unset, Nine, Unset]
+    );
+
+    let mut set: HashSet<Cell> = HashSet::new();
+    set.insert(One);
+    set.insert(Four);
+    assert_eq!(puzzle.possibilities(50), set,);
 
     assert!(puzzle.is_valid());
 }
