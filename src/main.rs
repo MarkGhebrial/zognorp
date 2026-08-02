@@ -41,7 +41,7 @@ fn main() {
     //     println!();
     // }
 
-    match solve_sudoku(&grid, 0) {
+    match solve_sudoku(&grid) {
         Ok(p) => println!("Found a solution for the first puzzle!\n{p}"),
         Err(e) => println!("{}", e),
     }
@@ -62,7 +62,7 @@ fn main() {
         .map(|c: u8| UBoundU8::new(c));
 
     let grid = Grid::new(grid);
-    match solve_sudoku(&grid, 0) {
+    match solve_sudoku(&grid) {
         Ok(p) => println!("Found a solution for the second puzzle!\n{p}"),
         Err(e) => println!("{}", e),
     }
@@ -86,7 +86,7 @@ fn main() {
 
     let grid = Grid::new(grid);
 
-    match solve_sudoku(&grid, 0) {
+    match solve_sudoku(&grid) {
         Ok(p) => println!("Found a solution to the third puzzle!\n{p}"),
         Err(e) => println!("{}", e),
     }

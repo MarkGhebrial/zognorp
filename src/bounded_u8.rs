@@ -36,5 +36,3 @@ impl<const LOWER: u8, const UPPER: u8> Deref for BoundedU8<LOWER, UPPER> {
 
 /// Bounded U8 with only an inclusive upper bound
 pub type UBoundU8<const UPPER: u8> = BoundedU8<0, UPPER>;
-// / A u8 bounded between 0 and 9 inclusive
-// pub type NineBound = BoundedU8<0, 9>;

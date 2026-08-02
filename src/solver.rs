@@ -1,13 +1,10 @@
-// use std::error::Error;
-
-use std::{fmt::Display, usize};
+use std::fmt::Display;
 
 use crate::{
     bounded_u8::{BoundedU8, UBoundU8},
     grid::{CellPossibilities, Grid},
 };
 
-// #[derive(Error)]
 pub enum SolverError {
     InvalidPuzzle,
 
@@ -19,20 +16,16 @@ impl Display for SolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use SolverError::*;
         match self {
-            InvalidPuzzle => write!(f, "Invalid puzzle.\n"),
+            InvalidPuzzle => write!(f, "Invalid puzzle."),
             DeadEnd => write!(
                 f,
-                "Solver reached a dead end (this should not be a user-facing error).\n"
+                "Solver reached a dead end (this should not be a user-facing error)."
             ),
         }
     }
 }
 
-pub fn solve_sudoku(
-    grid: &Grid,
-    // visited_puzzles: &mut HashSet<[UBoundU8<9>; 81]>,
-    depth: usize,
-) -> Result<Grid, SolverError> {
+pub fn solve_sudoku(grid: &Grid) -> Result<Grid, SolverError> {
     // Base cases
     if !grid.is_valid() {
         return Err(SolverError::InvalidPuzzle);
@@ -56,40 +49,27 @@ pub fn solve_sudoku(
         }
     }
 
-    // Sort the list of possibilities so that we first search the cells with the fewest possibilities
-    // let all_possibilities = merge_sort(&all_possibilities, |a, b| *a.1.count() < *b.1.count());
-
     // Find the cell with the fewest amount of possibilities
     let (best_cell_index, best_cell_possibilities) = all_possibilities
         .iter()
         .min_by(|(_, a), (_, b)| a.count().cmp(&b.count()))
         .unwrap();
 
-    // for (cell_index, cell_possibilities) in all_possibilities {
-    for cell_value in (1..=9).map(|n: u8| UBoundU8::<9>::new(n)) {
-        // Skip impossible guesses
-        if !best_cell_possibilities.is_possible(cell_value) {
-            continue;
-        }
-
-        //println!("Guessing {} for cell index {} at depth {}", *cell_value, cell_index, depth);
-
+    // Try every number possible value for the cell with the fewest possibilities
+    for cell_value in (1..=9)
+        .map(|n: u8| UBoundU8::<9>::new(n))
+        .filter(|n| best_cell_possibilities.is_possible(*n))
+    {
         let mut new_puzzle = grid.clone();
         new_puzzle.set_cell(BoundedU8::new(*best_cell_index as u8), cell_value);
 
-        // if !visited_puzzles.insert(new_puzzle.cells().clone()) {
-        //     continue;
-        // }
-
         // Recursively solve the new puzzle
-        match solve_sudoku(&new_puzzle, depth + 1) {
+        match solve_sudoku(&new_puzzle) {
             Ok(solved_puzzle) => return Ok(solved_puzzle),
             Err(SolverError::DeadEnd) => { /* continue */ }
             Err(e) => panic!("error when attempting to solve puzzle: {}", e),
         }
     }
-    // break;
-    // }
 
     Err(SolverError::DeadEnd)
 }

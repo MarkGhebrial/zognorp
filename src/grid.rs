@@ -162,7 +162,7 @@ impl Grid {
             }
         }
 
-        return all_cells_are_set && self.is_valid();
+        all_cells_are_set && self.is_valid()
     }
 }
 
@@ -171,7 +171,7 @@ impl Display for Grid {
         for row in 0..=8 {
             // Print the horizontal separators between blocks
             if row == 3 || row == 6 {
-                write!(f, "---------------------\n")?;
+                writeln!(f, "---------------------")?;
             }
 
             for col in 0..9 {
@@ -183,7 +183,7 @@ impl Display for Grid {
                 write!(f, "{} ", *self.cells[row * 9 + col])?
             }
 
-            write!(f, "\n")?
+            writeln!(f)?
         }
         Ok(())
     }
