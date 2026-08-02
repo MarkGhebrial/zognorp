@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::{bounded_u8::UBoundU8, puzzle::Puzzle};
+use crate::{
+    bounded_u8::UBoundU8,
+    puzzle::Puzzle,
+};
 
 #[derive(Clone, Copy)]
 pub struct CellPossibilities {
@@ -11,9 +14,14 @@ pub struct CellPossibilities {
 }
 
 impl CellPossibilities {
+    /// Nine ones
+    const ALL_MASK: u16 = 0x1FF;
+
     /// Creates a new CellPossibilities with every possibility set
     pub fn new() -> Self {
-        Self { inner: u16::MAX }
+        Self {
+            inner: Self::ALL_MASK,
+        }
     }
 
     /// Is the given value possible?
@@ -25,6 +33,14 @@ impl CellPossibilities {
         (self.inner & (1 << (*value - 1))) != 0
     }
 
+    pub fn are_all_impossible(&self) -> bool {
+        (self.inner & Self::ALL_MASK) == 0
+    }
+
+    pub fn count(&self) -> UBoundU8<9> {
+        UBoundU8::new((self.inner & Self::ALL_MASK).count_ones() as u8)
+    }
+
     /// Set the given value to be impossible
     pub fn set_impossible(&mut self, value: UBoundU8<9>) {
         if value == 0 {
@@ -34,10 +50,11 @@ impl CellPossibilities {
     }
 
     pub fn set_all_impossible(&mut self) {
-        self.inner = 0;
+        self.inner = Self::ALL_MASK;
     }
 }
 
+#[derive(Clone)]
 pub struct Grid {
     cells: [UBoundU8<9>; 81],
     possibilities: [CellPossibilities; 81],
@@ -57,11 +74,9 @@ impl Grid {
 
             // Scan through the cell's neighbors
             for neighbor_index in Puzzle::neighbor_indices(cell_index) {
-                println!("Neighbor {}", neighbor_index);
                 let neighbor_value = &cells[neighbor_index];
                 // Is the neighbor set?
                 if *neighbor_value != 0 {
-                    println!("Setting impossibility");
                     // If so, call .set_impossible(neighbor's value) on the cell's possibilities
                     possibilities[cell_index].set_impossible(*neighbor_value);
                 }
@@ -80,6 +95,74 @@ impl Grid {
 
     pub fn possibilities(&self) -> &[CellPossibilities; 81] {
         &self.possibilities
+    }
+
+    // TODO: Do we want to make cell_value BoundedU8<1, 9> instead?
+    pub fn set_cell(&mut self, cell_index: UBoundU8<80>, cell_value: UBoundU8<9>) {
+        let cell_possibilities = &mut self.possibilities[*cell_index as usize];
+        if !cell_possibilities.is_possible(cell_value) {
+            panic!(
+                "tried to assign an impossible value ({}) to cell {}",
+                *cell_value, *cell_index
+            );
+        }
+
+        // Assign the value to the cell
+        self.cells[*cell_index as usize] = cell_value;
+        cell_possibilities.set_all_impossible();
+
+        // For each neighbor index
+        for neighbor_index in Puzzle::neighbor_indices(*cell_index as usize) {
+            // Call .set_impossible(cell_value) on the neighbor's possibilities
+            self.possibilities[neighbor_index].set_impossible(cell_value);
+        }
+    }
+
+    /// Returns false if any two cells have the same value
+    fn is_group_valid(&self, cell_indexes: impl Iterator<Item = usize>) -> bool {
+        let mut possibilities = CellPossibilities::new();
+        for cell_index in cell_indexes {
+            let cell_value = self.cells[cell_index];
+            // Ignore cells that haven't been assigned a number yet
+            if cell_value == 0 {
+                continue;
+            }
+            // If the cell isn't allowed to have this value (i.e. if another cell in the group already has this value) ...
+            if !possibilities.is_possible(cell_value) {
+                // ... that means the puzzle is not valid
+                return false;
+            }
+            possibilities.set_impossible(cell_value);
+        }
+        true
+    }
+
+    /// Do all groups (rows, columns, boxes) have no repeated cell values?
+    pub fn is_valid(&self) -> bool {
+        // Iterate through the rows and columns
+        for i in 0..9 {
+            let valid = self.is_group_valid(Puzzle::row_indices(i).into_iter())
+                && self.is_group_valid(Puzzle::column_indices(i).into_iter())
+                && self.is_group_valid(Puzzle::column_indices(i).into_iter());
+            if !valid {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Is puzzle valid? Do all cells have a value?
+    pub fn is_solved(&self) -> bool {
+        let mut all_cells_are_set = true;
+        for cell in self.cells {
+            if cell == 0 {
+                all_cells_are_set = false;
+                break;
+            }
+        }
+
+        return all_cells_are_set && self.is_valid();
     }
 }
 
