@@ -1,9 +1,10 @@
 // use std::error::Error;
 
-use std::{collections::HashSet, fmt::Display, sync::atomic::AtomicUsize, usize};
+use std::{collections::HashSet, fmt::Display, usize};
 
 use crate::{
-    puzzle::{Cell, Puzzle, Valid}, solver::SolverError::InvalidPuzzle, sort::merge_sort,
+    puzzle::{Cell, Puzzle, Valid},
+    solver::SolverError::InvalidPuzzle,
 };
 
 // #[derive(Error)]
@@ -65,7 +66,10 @@ pub fn solve_sudoku(
         if possibilities.is_empty() {
             return Err(SolverError::DeadEnd(puzzle));
         }
-        println!("Possible moves for cell {}: {:?}", cell_index, possibilities);
+        println!(
+            "Possible moves for cell {}: {:?}",
+            cell_index, possibilities
+        );
     }
     println!("========");
 
@@ -98,7 +102,10 @@ pub fn solve_sudoku(
         }
     }
 
-    println!("Explored all {} possibilities. No solutions found for this puzzle at depth {depth}", aplen);
+    println!(
+        "Explored all {} possibilities. No solutions found for this puzzle at depth {depth}",
+        aplen
+    );
     // println!("Deadend\n{puzzle}");
 
     Err(SolverError::DeadEnd(puzzle))

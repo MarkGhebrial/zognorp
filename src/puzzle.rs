@@ -60,7 +60,7 @@ impl From<Cell> for u8 {
 impl Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Cell::*;
-        match self {   
+        match self {
             Unset => write!(f, " "),
             c => write!(f, "{}", *c as u8),
         }
@@ -83,7 +83,7 @@ impl Puzzle {
     //     self.cells[index]
     // }
 
-    pub fn set_cell(&mut self, index: usize, cell: Cell){
+    pub fn set_cell(&mut self, index: usize, cell: Cell) {
         assert!(index < 81);
         self.cells[index] = cell;
     }
@@ -147,11 +147,10 @@ impl Puzzle {
         let mut i = 0;
         while i < 9 {
             indices[i] = start_of_row_index + i;
-            i+=1;
+            i += 1;
         }
 
         indices
-
     }
 
     pub const fn column_indices(index: usize) -> [usize; 9] {
@@ -162,7 +161,7 @@ impl Puzzle {
         let mut i = 0;
         while i < 9 {
             indices[i] = index + i * 9;
-            i+= 1;
+            i += 1;
         }
 
         indices
