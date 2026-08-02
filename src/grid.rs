@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     bounded_u8::UBoundU8,
-    puzzle::{block_indices, column_indices, neighbor_indices, row_indices},
+    puzzle::{BLOCK_INDICES, COL_INDICES, NEIGHBOR_INDICES, ROW_INDICES},
 };
 
 #[derive(Clone, Copy)]
@@ -73,7 +73,7 @@ impl Grid {
             }
 
             // Scan through the cell's neighbors
-            for neighbor_index in neighbor_indices(cell_index) {
+            for neighbor_index in NEIGHBOR_INDICES[cell_index] {
                 let neighbor_value = &cells[neighbor_index];
                 // Is the neighbor set?
                 if *neighbor_value != 0 {
@@ -112,7 +112,7 @@ impl Grid {
         cell_possibilities.set_all_impossible();
 
         // For each neighbor index
-        for neighbor_index in neighbor_indices(*cell_index as usize) {
+        for neighbor_index in NEIGHBOR_INDICES[*cell_index as usize] {
             // Call .set_impossible(cell_value) on the neighbor's possibilities
             self.possibilities[neighbor_index].set_impossible(cell_value);
         }
@@ -141,9 +141,9 @@ impl Grid {
     pub fn is_valid(&self) -> bool {
         // Iterate through the rows and columns
         for i in 0..9 {
-            let valid = self.is_group_valid(row_indices(i).into_iter())
-                && self.is_group_valid(column_indices(i).into_iter())
-                && self.is_group_valid(block_indices(i).into_iter());
+            let valid = self.is_group_valid(ROW_INDICES[i].into_iter())
+                && self.is_group_valid(COL_INDICES[i].into_iter())
+                && self.is_group_valid(BLOCK_INDICES[i].into_iter());
             if !valid {
                 return false;
             }

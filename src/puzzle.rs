@@ -1,10 +1,65 @@
-use std::collections::HashSet;
+use std::unreachable;
+
+/// ROW_INDICES[i] is the set of cell indexes for the i'th row of the grid
+pub const ROW_INDICES: [[usize; 9]; 9] = {
+    let mut indices = [[0; 9]; 9];
+    let mut i = 0;
+    while i < indices.len() {
+        indices[i] = row_indices(i);
+        i += 1;
+    }
+    indices
+};
+
+/// ROW_INDICES[i] is the set of cell indexes for the i'th column of the grid
+pub const COL_INDICES: [[usize; 9]; 9] = {
+    let mut indices = [[0; 9]; 9];
+    let mut i = 0;
+    while i < indices.len() {
+        indices[i] = column_indices(i);
+        i += 1;
+    }
+    indices
+};
+
+/// BLOCK_INDICES[i] is the set of cell indexes for the i'th block of the grid
+pub const BLOCK_INDICES: [[usize; 9]; 9] = {
+    let mut indices = [[0; 9]; 9];
+    let mut i = 0;
+    while i < indices.len() {
+        indices[i] = block_indices(i);
+        i += 1;
+    }
+    indices
+};
+
+/// NEIGHBOR_INDICES[i] is the set of all cell indexes in the i'th cell's row, column, and block
+pub const NEIGHBOR_INDICES: [[usize; 21]; 81] = {
+    let mut indices = [[0; 21]; 81];
+    let mut i = 0;
+    while i < indices.len() {
+        indices[i] = neighbor_indices(i);
+        i += 1;
+    }
+    indices
+};
+
+// Currently there doesn't seem to be a way to make this const function be generic over the array item
+// type
+const fn array_contains(array: &[usize], value: &usize) -> bool {
+    let mut i = 0;
+    while i < array.len() {
+        if array[i] == *value {
+            return true;
+        }
+        i += 1;
+    }
+    false
+}
 
 /// Returns the indexes of the set of neighbors of a cell. The neighbors of a cell are the union of the
 /// sets of the cell's block, row, and column.
-pub fn neighbor_indices(cell_index: usize) -> [usize; 21] {
-    let mut set_of_indexes: HashSet<usize> = HashSet::new();
-
+const fn neighbor_indices(cell_index: usize) -> [usize; 21] {
     let row_index = cell_index / 9;
     let column_index = cell_index % 9;
     // Given a row and column index, figure out what 3x3 block the cell belongs to
@@ -24,27 +79,46 @@ pub fn neighbor_indices(cell_index: usize) -> [usize; 21] {
 
         _ => unreachable!(),
     };
+    let mut indices: [usize; 21] = [usize::MAX; 21];
 
-    for index in row_indices(row_index)
-        .iter()
-        .chain(column_indices(column_index).iter())
-        .chain(block_indices(block_index).iter())
-    {
-        set_of_indexes.insert(*index);
+    // The indices of the other cells in the current cell's row, column, and block groups
+    // We want to return the union of these three sets
+    let row_indexes = row_indices(row_index);
+    let col_indexes = column_indices(column_index);
+    let block_indexes = block_indices(block_index);
+
+    let mut current_index = 0;
+
+    let mut i = 0;
+    while i < row_indexes.len() {
+        indices[current_index] = row_indexes[i];
+        current_index += 1;
+        i += 1;
     }
 
-    debug_assert!(set_of_indexes.len() == 21);
-
-    let mut indexes: [usize; 21] = [0; 21];
-    for (i, index) in set_of_indexes.iter().enumerate() {
-        indexes[i] = *index;
+    let mut i = 0;
+    while i < col_indexes.len() {
+        if !array_contains(&indices, &col_indexes[i]) {
+            indices[current_index] = col_indexes[i];
+            current_index += 1;
+        }
+        i += 1;
     }
 
-    indexes
+    let mut i = 0;
+    while i < block_indexes.len() {
+        if !array_contains(&indices, &block_indexes[i]) {
+            indices[current_index] = block_indexes[i];
+            current_index += 1;
+        }
+        i += 1;
+    }
+
+    indices
 }
 
 /// Given the index of a row, return a list of the indexes of the cells in that row
-pub const fn row_indices(index: usize) -> [usize; 9] {
+const fn row_indices(index: usize) -> [usize; 9] {
     assert!(index < 9);
 
     let mut indices = [0; 9];
@@ -60,7 +134,7 @@ pub const fn row_indices(index: usize) -> [usize; 9] {
     indices
 }
 
-pub const fn column_indices(index: usize) -> [usize; 9] {
+const fn column_indices(index: usize) -> [usize; 9] {
     assert!(index < 9);
 
     let mut indices = [0; 9];
@@ -76,7 +150,7 @@ pub const fn column_indices(index: usize) -> [usize; 9] {
 
 /// Given the index of a block, return a list of the indexes of the cells in
 /// that block
-pub const fn block_indices(index: usize) -> [usize; 9] {
+const fn block_indices(index: usize) -> [usize; 9] {
     assert!(index < 9);
 
     let mut indices = [0; 9];
