@@ -8,7 +8,6 @@ use crate::{
 };
 
 mod bounded_u8;
-mod grid_index;
 mod puzzle;
 mod grid;
 mod solver;
