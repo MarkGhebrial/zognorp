@@ -1,8 +1,4 @@
-use crate::{
-    bounded_u8::UBoundU8,
-    grid::Grid,
-    solver::solve_sudoku,
-};
+use crate::{bounded_u8::UBoundU8, grid::Grid, solver::solve_sudoku};
 
 mod bounded_u8;
 mod grid;
@@ -12,7 +8,7 @@ mod sort;
 
 fn main() {
     #[rustfmt::skip]
-    let grid: [UBoundU8<9>; 81] = 
+    let grid: [UBoundU8<9>; 81] =
     [
         5, 3, 0, 0, 7, 0, 0, 0, 0,
         6, 0, 0, 1, 9, 5, 0, 0, 0,
@@ -51,7 +47,7 @@ fn main() {
     }
 
     #[rustfmt::skip]
-    let grid: [UBoundU8<9>; 81] = 
+    let grid: [UBoundU8<9>; 81] =
     [
         2, 0, 0, 0, 1, 0, 3, 6, 0,
         1, 0, 0, 9, 0, 0, 5, 0, 0,
@@ -74,7 +70,7 @@ fn main() {
     // let mut grid: [Cell; 81] = [Cell::Unset; 81];
 
     #[rustfmt::skip]
-    let grid: [UBoundU8<9>; 81] = 
+    let grid: [UBoundU8<9>; 81] =
     [
         0, 0, 0, 2, 0, 0, 6, 5, 0,
         7, 0, 0, 0, 0, 0, 0, 0, 0,
