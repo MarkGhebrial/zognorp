@@ -27,7 +27,7 @@ fn main() {
 
     let puzzle = Puzzle::new(grid);
 
-    match solve_sudoku(puzzle) {
+    match solve_sudoku(puzzle, &mut HashSet::new(), 0) {
         Ok(p) => println!("Found a solution for the first puzzle!\n{p}"),
         Err(e) => println!("{}", e),
     }
@@ -51,7 +51,7 @@ fn main() {
 
     let puzzle = Puzzle::new(grid);
 
-    match solve_sudoku(puzzle, &mut HashSet::new()) {
+    match solve_sudoku(puzzle, &mut HashSet::new(), 0) {
         Ok(p) => println!("Found a solution for the second puzzle!\n{p}"),
         Err(e) => println!("{}", e),
     }

@@ -1,7 +1,8 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Display};
 
 // Represents all the possible values that can be held in a Sudoku cell
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+#[repr(u8)]
 pub enum Cell {
     Unset,
     One,
@@ -21,11 +22,11 @@ impl Cell {
     }
 }
 
-impl Default for Cell {
-    fn default() -> Self {
-        Self::Unset
-    }
-}
+// impl Default for Cell {
+//     fn default() -> Self {
+//         Self::Unset
+//     }
+// }
 
 // Convert a byte to a cell
 impl From<u8> for Cell {
@@ -52,24 +53,23 @@ impl From<u8> for Cell {
 // Convert a cell to a byte
 impl From<Cell> for u8 {
     fn from(value: Cell) -> Self {
+        value as u8
+    }
+}
+
+impl Display for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Cell::*;
-        match value {
-            Unset => 0,
-            One => 1,
-            Two => 2,
-            Three => 3,
-            Four => 4,
-            Five => 5,
-            Six => 6,
-            Seven => 7,
-            Eight => 8,
-            Nine => 9,
+        match self {   
+            Unset => write!(f, " "),
+            c => write!(f, "{}", *c as u8),
         }
     }
 }
 
-/// Represents a sudoku board. The cells of the board are stored as an 81 element
+/// Represents a sudoku board. The cells of the board are stored in an 81 element
 /// array of the Cell enum.
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct Puzzle {
     cells: [Cell; 81],
 }
@@ -79,56 +79,103 @@ impl Puzzle {
         Self { cells }
     }
 
-    pub fn set_cell(&self, index: usize, cell: Cell) -> Self {
-        debug_assert!(index < 81);
-
-        let mut cells = self.cells.clone();
-        cells[index] = cell;
-        Puzzle::new(cells)
-    }
-
     // pub fn get_cell(&self, index: usize) -> Cell {
     //     self.cells[index]
     // }
 
-    // Return an iterator over all the set cells in the sudoku grid and their indexes.
+    pub fn set_cell(&mut self, index: usize, cell: Cell){
+        assert!(index < 81);
+        self.cells[index] = cell;
+    }
+
+    // Return an iterator over all the unset cells in the sudoku grid and their indexes.
     pub fn iter_unset_cells(&self) -> impl Iterator<Item = (usize, &Cell)> {
         self.cells.iter().enumerate().filter(|(_i, c)| !c.is_set())
     }
 
-    /// Get a column of the sudoku board
-    pub fn column(&self, index: usize) -> [Cell; 9] {
-        debug_assert!(index < 9);
+    /// Returns the indexes of the set of neighbors of a cell. The neighbors of a cell are the union of the
+    /// sets of the cell's block, row, and column.
+    pub fn neighbor_indices(cell_index: usize) -> [usize; 21] {
+        let mut set_of_indexes: HashSet<usize> = HashSet::new();
 
-        let mut out: [Cell; 9] = [Cell::Unset; 9];
+        let row_index = cell_index / 9;
+        let column_index = cell_index % 9;
+        // Given a row and column index, figure out what 3x3 block the cell belongs to
+        let block_index = match (row_index, column_index) {
+            // First row of blocks
+            (0..=2, 0..=2) => 0,
+            (0..=2, 3..=5) => 1,
+            (0..=2, 6..=8) => 2,
+            // Second row of blocks
+            (3..=5, 0..=2) => 3,
+            (3..=5, 3..=5) => 4,
+            (3..=5, 6..=8) => 5,
+            // Third row of blocks
+            (6..=8, 0..=2) => 6,
+            (6..=8, 3..=5) => 7,
+            (6..=8, 6..=8) => 8,
 
-        for i in 0..9 {
-            out[i] = self.cells[index + i * 9];
+            _ => unreachable!(),
+        };
+
+        for index in Self::row_indices(row_index)
+            .iter()
+            .chain(Self::column_indices(column_index).iter())
+            .chain(Self::block_indices(block_index).iter())
+        {
+            set_of_indexes.insert(*index);
         }
 
-        out
-    }
+        debug_assert!(set_of_indexes.len() == 21);
 
-    /// Get a row of the sudoku board
-    pub fn row(&self, index: usize) -> [Cell; 9] {
-        debug_assert!(index < 9);
-
-        let row = &self.cells[9 * index..9 * index + 9];
-
-        assert!(row.len() == 9);
-
-        let mut out: [Cell; 9] = [Cell::Unset; 9];
-        for i in 0..9 {
-            out[i] = row[i];
+        let mut indexes: [usize; 21] = [0; 21];
+        for (i, index) in set_of_indexes.iter().enumerate() {
+            indexes[i] = *index;
         }
-        out
+
+        indexes
     }
 
-    /// Get one of the puzzle's 3x3 blocks
-    pub fn block(&self, index: usize) -> [Cell; 9] {
+    /// Given the index of a row, return a list of the indexes of the cells in that row
+    pub const fn row_indices(index: usize) -> [usize; 9] {
         assert!(index < 9);
 
-        // Te index of the first cell in the block
+        let mut indices = [0; 9];
+
+        let start_of_row_index = 9 * index;
+
+        let mut i = 0;
+        while i < 9 {
+            indices[i] = start_of_row_index + i;
+            i+=1;
+        }
+
+        indices
+
+    }
+
+    pub const fn column_indices(index: usize) -> [usize; 9] {
+        assert!(index < 9);
+
+        let mut indices = [0; 9];
+
+        let mut i = 0;
+        while i < 9 {
+            indices[i] = index + i * 9;
+            i+= 1;
+        }
+
+        indices
+    }
+
+    /// Given the index of a block, return a list of the indexes of the cells in
+    /// that block
+    pub fn block_indices(index: usize) -> [usize; 9] {
+        assert!(index < 9);
+
+        let mut indices = [0; 9];
+
+        // The index of the first cell in the block
         let start_index: usize = match index {
             0..=2 => index * 3,
             3..=5 => 27 + ((index % 3) * 3),
@@ -138,22 +185,50 @@ impl Puzzle {
             _ => unreachable!(),
         };
 
-        let row1 = &self.cells[start_index..start_index + 3];
-        let row2 = &self.cells[start_index + 9..start_index + 9 + 3];
-        let row3 = &self.cells[start_index + 18..start_index + 18 + 3];
+        let range1 = start_index..start_index + 3;
+        let range2 = start_index + 9..start_index + 9 + 3;
+        let range3 = start_index + 18..start_index + 18 + 3;
 
-        debug_assert!(row1.len() == 3);
-        debug_assert!(row2.len() == 3);
-        debug_assert!(row3.len() == 3);
+        for (i, index) in range1.chain(range2).chain(range3).enumerate() {
+            indices[i] = index
+        }
+
+        indices
+    }
+
+    /// Get a row of the sudoku board
+    pub fn row(&self, index: usize) -> [Cell; 9] {
+        debug_assert!(index < 9);
 
         let mut out: [Cell; 9] = [Cell::Unset; 9];
-        for (i, value) in row1
-            .iter()
-            .chain(row2.iter())
-            .chain(row3.iter())
-            .enumerate()
-        {
-            out[i] = *value;
+        for (i, cell_index) in Self::row_indices(index).iter().enumerate() {
+            out[i] = self.cells[*cell_index];
+        }
+        out
+    }
+
+    /// Get a column of the sudoku board
+    pub fn column(&self, index: usize) -> [Cell; 9] {
+        debug_assert!(index < 9);
+
+        let mut out: [Cell; 9] = [Cell::Unset; 9];
+
+        for (i, index) in Self::column_indices(index).iter().enumerate() {
+            out[i] = self.cells[*index];
+        }
+
+        out
+    }
+
+    /// Get the cells in one of the puzzle's 3x3 blocks
+    pub fn block(&self, index: usize) -> [Cell; 9] {
+        assert!(index < 9);
+
+        let cell_indexes = Self::block_indices(index);
+
+        let mut out: [Cell; 9] = [Cell::Unset; 9];
+        for (i, cell_index) in cell_indexes.iter().enumerate() {
+            out[i] = self.cells[*cell_index];
         }
 
         out
@@ -220,7 +295,31 @@ impl Puzzle {
     }
 }
 
-trait Valid {
+impl Display for Puzzle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in 0..=8 {
+            // Print the horizontal separators between blocks
+            if i == 3 || i == 6 {
+                write!(f, "---------------------\n")?;
+            }
+
+            for j in 0..9 {
+                // Print the vertical separators between blocks
+                if j == 3 || j == 6 {
+                    write!(f, "| ")?;
+                }
+
+                write!(f, "{} ", self.row(i)[j])?
+            }
+
+            write!(f, "\n")?
+        }
+
+        Ok(())
+    }
+}
+
+pub trait Valid {
     fn is_valid(&self) -> bool;
 }
 
@@ -319,9 +418,8 @@ fn test_group_is_valid() {
 
 #[test]
 fn test_puzzle_is_valid() {
-    let mut grid: [Cell; 81] = [Cell::Unset; 81];
-
     #[rustfmt::skip]
+    let grid: [Cell; 81] =
     [
         5, 3, 0, 0, 7, 0, 0, 0, 0,
         6, 0, 0, 1, 9, 5, 0, 0, 0,
@@ -333,10 +431,7 @@ fn test_puzzle_is_valid() {
         0, 0, 0, 4, 1, 9, 0, 0, 5,
         0, 0, 0, 0, 8, 0, 0, 7, 9 
     ]
-        .iter()
-        .map(|c| Cell::from(*c))
-        .enumerate()
-        .for_each(|(i, c)| grid[i] = c);
+        .map(|c: u8| Cell::from(c));
 
     let puzzle = Puzzle::new(grid);
 
