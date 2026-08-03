@@ -52,7 +52,7 @@ pub fn solve_sudoku(grid: &Grid) -> Result<Grid, SolverError> {
     // Find the cell with the fewest amount of possibilities
     let (best_cell_index, best_cell_possibilities) = all_possibilities
         .iter()
-        .min_by(|(_, a), (_, b)| a.count().cmp(&b.count()))
+        .min_by_key(|(_, possibilities)| possibilities.count())
         .unwrap();
 
     // Try every number possible value for the cell with the fewest possibilities

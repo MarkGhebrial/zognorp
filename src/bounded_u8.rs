@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 /// A u8 that's guaranteed by construction to be within the upper and lower bounds. Both bounds are
 /// inclusive!
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoundedU8<const LOWER: u8, const UPPER: u8> {
     inner: u8,
 }
