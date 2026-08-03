@@ -49,8 +49,8 @@ fn main() {
         num_puzzles += 1;
 
         match solution {
-            Ok(_grid) => println!("Solved puzzle {} in {}us", i, elapsed.as_micros()),
-            Err(err) => println!("Failed to solve puzzle {}: {}", i, err),
+            Some(_grid) => println!("Solved puzzle {} in {}us", i, elapsed.as_micros()),
+            None => panic!("Failed to solve puzzle {}", i),
         }
     }
 

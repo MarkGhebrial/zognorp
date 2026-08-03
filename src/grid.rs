@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     bounded_u8::UBoundU8,
-    puzzle::{BLOCK_INDICES, COL_INDICES, NEIGHBOR_INDICES, ROW_INDICES},
+    puzzle::{NEIGHBOR_INDICES},
 };
 
 #[derive(Clone, Copy)]
@@ -33,8 +33,8 @@ impl CellPossibilities {
         (self.inner & (1 << (*value - 1))) != 0
     }
 
-    pub fn are_all_impossible(&self) -> bool {
-        (self.inner & Self::ALL_MASK) == 0
+    pub fn has_possibilities(&self) -> bool {
+        (self.inner & Self::ALL_MASK) != 0
     }
 
     pub fn count(&self) -> UBoundU8<9> {
@@ -47,10 +47,6 @@ impl CellPossibilities {
             return;
         }
         self.inner &= !(1 << (*value - 1));
-    }
-
-    pub fn set_all_impossible(&mut self) {
-        self.inner = Self::ALL_MASK;
     }
 }
 
@@ -65,15 +61,12 @@ impl Grid {
         let mut possibilities = [CellPossibilities::new(); 81];
 
         // For each cell
-        for (cell_index, cell_value) in cells.iter().enumerate() {
-            // Skip calculating the possibilities for cells that're already set
-            if *cell_value != 0 {
-                possibilities[cell_index].set_all_impossible();
-                continue;
-            }
-
+        for cell_index in 0..81 {
             // Scan through the cell's neighbors
             for neighbor_index in NEIGHBOR_INDICES[cell_index] {
+                if neighbor_index == cell_index {
+                    continue;
+                }
                 let neighbor_value = &cells[neighbor_index];
                 // Is the neighbor set?
                 if *neighbor_value != 0 {
@@ -109,42 +102,23 @@ impl Grid {
 
         // Assign the value to the cell
         self.cells[*cell_index as usize] = cell_value;
-        cell_possibilities.set_all_impossible();
 
         // For each neighbor index
         for neighbor_index in NEIGHBOR_INDICES[*cell_index as usize] {
+            if neighbor_index == *cell_index as usize {
+                continue;
+            }
             // Call .set_impossible(cell_value) on the neighbor's possibilities
             self.possibilities[neighbor_index].set_impossible(cell_value);
         }
     }
 
-    /// Returns false if any two cells have the same value
-    fn is_group_valid(&self, cell_indexes: impl Iterator<Item = usize>) -> bool {
-        let mut possibilities = CellPossibilities::new();
-        for cell_index in cell_indexes {
-            let cell_value = self.cells[cell_index];
-            // Ignore cells that haven't been assigned a number yet
-            if cell_value == 0 {
-                continue;
-            }
-            // If the cell isn't allowed to have this value (i.e. if another cell in the group already has this value) ...
-            if !possibilities.is_possible(cell_value) {
-                // ... that means the puzzle is not valid
-                return false;
-            }
-            possibilities.set_impossible(cell_value);
-        }
-        true
-    }
 
     /// Do all groups (rows, columns, boxes) have no repeated cell values?
     pub fn is_valid(&self) -> bool {
-        // Iterate through the rows and columns
-        for i in 0..9 {
-            let valid = self.is_group_valid(ROW_INDICES[i].into_iter())
-                && self.is_group_valid(COL_INDICES[i].into_iter())
-                && self.is_group_valid(BLOCK_INDICES[i].into_iter());
-            if !valid {
+        // Return false if any cells in the grid don't have any legal possibilities
+        for i in 0..81 {
+            if !self.possibilities[i].has_possibilities() {
                 return false;
             }
         }

@@ -1,37 +1,16 @@
-use std::fmt::Display;
-
 use crate::{
     bounded_u8::{BoundedU8, UBoundU8},
     grid::{CellPossibilities, Grid},
 };
 
-pub enum SolverError {
-    InvalidPuzzle,
 
-    // Returned when the solver arrives at a puzzle with no solution
-    DeadEnd,
-}
-
-impl Display for SolverError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use SolverError::*;
-        match self {
-            InvalidPuzzle => write!(f, "Invalid puzzle."),
-            DeadEnd => write!(
-                f,
-                "Solver reached a dead end (this should not be a user-facing error)."
-            ),
-        }
-    }
-}
-
-pub fn solve_sudoku(grid: &Grid) -> Result<Grid, SolverError> {
+pub fn solve_sudoku(grid: &Grid) -> Option<Grid> {
     // Base cases
     if !grid.is_valid() {
-        return Err(SolverError::InvalidPuzzle);
+        return None;
     }
     if grid.is_solved() {
-        return Ok(grid.clone());
+        return Some(grid.clone());
     }
 
     let all_possibilities: Vec<(usize, &CellPossibilities)> = grid
@@ -41,13 +20,6 @@ pub fn solve_sudoku(grid: &Grid) -> Result<Grid, SolverError> {
         .filter(|(cell_index, _)| grid.cells()[*cell_index] == 0) // Filter out cells that've already been set
         .collect();
 
-    // Reject puzzles where any unset cells don't have valid possibilities
-    for (_cell_index, cell_possibilities) in all_possibilities.iter() {
-        if cell_possibilities.are_all_impossible() {
-            // println!("All impossible");
-            return Err(SolverError::DeadEnd);
-        }
-    }
 
     // Find the cell with the fewest amount of possibilities
     let (best_cell_index, best_cell_possibilities) = all_possibilities
@@ -65,11 +37,11 @@ pub fn solve_sudoku(grid: &Grid) -> Result<Grid, SolverError> {
 
         // Recursively solve the new puzzle
         match solve_sudoku(&new_puzzle) {
-            Ok(solved_puzzle) => return Ok(solved_puzzle),
-            Err(SolverError::DeadEnd) => { /* continue */ }
-            Err(e) => panic!("error when attempting to solve puzzle: {}", e),
+            Some(solved_puzzle) => return Some(solved_puzzle),
+            None => { /* continue */ }
         }
     }
 
-    Err(SolverError::DeadEnd)
+    // No solutions found
+    None
 }
