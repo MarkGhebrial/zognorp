@@ -1,0 +1,10 @@
+[target.'cfg(target_arch = "x86_64")']
+rustflags = [
+    # Compile for newer x86 instruction sets. This gets us access to the popcnt
+    # instruction, which massively speeds up CellPossibilities::count().
+    "-C", "target-cpu=x86-64-v3"
+]
+
+[target.x86_64-unknown-linux-gnu]
+# For cargo-flamegraph to work correctly
+rustflags = ["-Clink-arg=-Wl,--no-rosegment"]
