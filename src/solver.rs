@@ -3,7 +3,6 @@ use crate::{
     grid::{CellPossibilities, Grid},
 };
 
-
 pub fn solve_sudoku(grid: &Grid) -> Option<Grid> {
     // Base cases
     if !grid.is_valid() {
@@ -19,7 +18,6 @@ pub fn solve_sudoku(grid: &Grid) -> Option<Grid> {
         .enumerate()
         .filter(|(cell_index, _)| grid.cells()[*cell_index] == 0) // Filter out cells that've already been set
         .collect();
-
 
     // Find the cell with the fewest amount of possibilities
     let (best_cell_index, best_cell_possibilities) = all_possibilities

@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use crate::{
-    bounded_u8::UBoundU8,
-    puzzle::{NEIGHBOR_INDICES},
-};
+use crate::{bounded_u8::UBoundU8, puzzle::NEIGHBOR_INDICES};
 
 #[derive(Clone, Copy)]
 pub struct CellPossibilities {
@@ -112,7 +109,6 @@ impl Grid {
             self.possibilities[neighbor_index].set_impossible(cell_value);
         }
     }
-
 
     /// Do all groups (rows, columns, boxes) have no repeated cell values?
     pub fn is_valid(&self) -> bool {
