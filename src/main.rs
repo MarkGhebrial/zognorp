@@ -4,7 +4,7 @@ use crate::{bounded_u8::UBoundU8, grid::Grid, solver::solve_sudoku};
 
 mod bounded_u8;
 mod grid;
-mod puzzle;
+mod lookup_tables;
 mod solver;
 mod sort;
 

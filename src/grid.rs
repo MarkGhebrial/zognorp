@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{bounded_u8::UBoundU8, puzzle::NEIGHBOR_INDICES};
+use crate::{bounded_u8::UBoundU8, lookup_tables::NEIGHBOR_INDICES};
 
 #[derive(Clone, Copy)]
 pub struct CellPossibilities {
