@@ -112,14 +112,14 @@ impl Grid {
 
     /// Do all groups (rows, columns, boxes) have no repeated cell values?
     pub fn is_valid(&self) -> bool {
+        let mut valid = true;
+
         // Return false if any cells in the grid don't have any legal possibilities
         for i in 0..81 {
-            if !self.possibilities[i].has_possibilities() {
-                return false;
-            }
+            valid &= self.possibilities[i].has_possibilities();
         }
 
-        true
+        valid
     }
 
     /// Is puzzle valid? Do all cells have a value?
